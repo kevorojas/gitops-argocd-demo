@@ -100,10 +100,6 @@ webhook:
   
   hostNetwork: false
   serviceType: ClusterIP
-  
-  # Configuración específica del webhook
-  config:
-    # Configuración adicional del webhook si es necesaria
 
 # Configuración del CA Injector
 cainjector:
