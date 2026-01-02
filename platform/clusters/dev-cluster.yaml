@@ -1,29 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ingress-nginx
+  name: dev-cluster-infra
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-spec: 
+spec:
   project: default
-  sources:
-    - chart: ingress-nginx
-      repoURL: https://kubernetes.github.io/ingress-nginx
-      targetRevision: 4.14.1
-      helm:
-        releaseName: ingress-nginx
-        valueFiles:
-          - $values/platform/infra-components/ingress-nginx/values.yaml
-    
-    - repoURL: https://github.com/kevorojas/gitops-argocd-demo.git
-      targetRevision: main
-      ref: values
-  
-  destination: 
+  source:
+    repoURL: https://github.com/kevorojas/gitops-argocd-demo.git
+    targetRevision: main
+    path: platform/infra-base/applications
+  destination:
     server: https://kubernetes.default.svc
-    namespace: ingress-nginx
-  
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
