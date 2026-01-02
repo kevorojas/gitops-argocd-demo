@@ -52,10 +52,6 @@ resources:
 securityContext:
   runAsNonRoot: true
 
-# Pod Security Context
-podSecurityContext:
-  runAsNonRoot: true
-
 # Configuración de nodos
 nodeSelector: {}
 tolerations: []
