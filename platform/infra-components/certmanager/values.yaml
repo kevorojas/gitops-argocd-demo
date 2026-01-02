@@ -3,21 +3,19 @@
 
 # Configuración global
 global:
-  # Configuración de podSecurityPolicy
+  priorityClassName: ""
+  rbac:
+    create: true
   podSecurityPolicy:
     enabled: false
     useAppArmor: true
-  
-  # Configuración de prioridad de pods
-  priorityClassName: ""
-  
-  # Configuración de imagen base
-  imageRegistry: ""
-  
-# Configuración principal del controlador cert-manager
+  leaderElection:
+    namespace: "cert-manager"
+
+# Instalar CRDs
 installCRDs: true
 
-# Configuración de réplicas y alta disponibilidad
+# Configuración principal del controlador cert-manager
 replicaCount: 1
 
 # Estrategia de deployment
@@ -29,8 +27,9 @@ strategy:
 
 # Configuración de la imagen
 image:
-  repository: quay.io/jetstack/cert-manager-controller
-  # tag: Usar la versión que se especifique en el Application
+  registry: quay.io
+  repository: jetstack/cert-manager-controller
+  # tag: se usa la versión del chart
   pullPolicy: IfNotPresent
 
 # Configuración de ServiceAccount
@@ -43,29 +42,27 @@ serviceAccount:
 # Configuración de recursos
 resources:
   limits:
-    memory: "512Mi"
-    cpu: "500m"
+    cpu: 100m
+    memory: 128Mi
   requests:
-    memory: "32Mi"
-    cpu: "10m"
+    cpu: 10m
+    memory: 32Mi
 
 # Security Context
 securityContext:
   runAsNonRoot: true
-  runAsUser: 1000
-  runAsGroup: 1000
 
 # Pod Security Context
 podSecurityContext:
-  fsGroup: 1000
+  runAsNonRoot: true
 
-# Configuración de nodos y tolerations
+# Configuración de nodos
 nodeSelector: {}
 tolerations: []
 affinity: {}
 
-# Configuración de DNS
-dns01RecursiveNameservers: []
+# Configuración de DNS para ACME DNS01
+dns01RecursiveNameservers: "8.8.8.8:53,1.1.1.1:53"
 dns01RecursiveNameserversOnly: false
 
 # Configuración de métricas
@@ -90,43 +87,27 @@ webhook:
       maxUnavailable: 1
   
   image:
-    repository: quay.io/jetstack/cert-manager-webhook
+    registry: quay.io
+    repository: jetstack/cert-manager-webhook
     pullPolicy: IfNotPresent
   
   resources:
     limits:
-      memory: "128Mi"
-      cpu: "100m"
+      cpu: 100m
+      memory: 128Mi
     requests:
-      memory: "32Mi"
-      cpu: "10m"
+      cpu: 10m
+      memory: 32Mi
   
   securityContext:
     runAsNonRoot: true
-    runAsUser: 1000
-    runAsGroup: 1000
   
-  podSecurityContext:
-    fsGroup: 1000
-  
-  # Configuración de métricas para webhook
-  prometheus:
-    enabled: true
-    servicemonitor:
-      enabled: false
-  
-  # Configuración de red para webhook
   hostNetwork: false
   serviceType: ClusterIP
   
-  # Configuración de mutación de pods
-  mutatingAdmissionResource:
-    namespaceSelector:
-      matchExpressions:
-      - key: name
-        operator: NotIn
-        values:
-        - cert-manager
+  # Configuración específica del webhook
+  config:
+    # Configuración adicional del webhook si es necesaria
 
 # Configuración del CA Injector
 cainjector:
@@ -140,30 +121,20 @@ cainjector:
       maxUnavailable: 1
   
   image:
-    repository: quay.io/jetstack/cert-manager-cainjector
+    registry: quay.io
+    repository: jetstack/cert-manager-cainjector
     pullPolicy: IfNotPresent
   
   resources:
     limits:
-      memory: "512Mi"
-      cpu: "100m"
+      cpu: 100m
+      memory: 128Mi
     requests:
-      memory: "32Mi"
-      cpu: "10m"
+      cpu: 10m
+      memory: 32Mi
   
   securityContext:
     runAsNonRoot: true
-    runAsUser: 1000
-    runAsGroup: 1000
-  
-  podSecurityContext:
-    fsGroup: 1000
-  
-  # Configuración de métricas para cainjector
-  prometheus:
-    enabled: true
-    servicemonitor:
-      enabled: false
 
 # Configuración de startup API check
 startupapicheck:
@@ -182,24 +153,20 @@ startupapicheck:
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
   
   image:
-    repository: quay.io/jetstack/cert-manager-ctl
+    registry: quay.io
+    repository: jetstack/cert-manager-ctl
     pullPolicy: IfNotPresent
   
   resources:
     limits:
-      memory: "32Mi"
-      cpu: "100m"
+      cpu: 100m
+      memory: 128Mi
     requests:
-      memory: "16Mi"
-      cpu: "10m"
+      cpu: 10m
+      memory: 32Mi
   
   securityContext:
     runAsNonRoot: true
-    runAsUser: 1000
-    runAsGroup: 1000
-  
-  podSecurityContext:
-    fsGroup: 1000
 
 # Configuración adicional para el controlador
 extraArgs: []
@@ -209,27 +176,13 @@ extraEnv: []
 volumes: []
 volumeMounts: []
 
-# Configuración de anotaciones para pods
+# Configuración de anotaciones y etiquetas para pods
 podAnnotations: {}
-
-# Configuración de etiquetas para pods
 podLabels: {}
 
 # Configuración de disruption budget
 podDisruptionBudget:
   enabled: false
-  # minAvailable: 1
-  # maxUnavailable: 1
 
 # Configuración de feature gates
 featureGates: ""
-
-# Configuración de log level
-logLevel: 2
-
-# Configuración de leader election
-leaderElection:
-  namespace: "cert-manager"
-
-# Configuración del namespace de instalación
-installNamespace: false
