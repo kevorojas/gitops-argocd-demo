@@ -1,4 +1,4 @@
-# Cert-Manager Helm Chart Values
+# Cert-Manager Helm Chart Values v1.19.2
 # Referencia: https://artifacthub.io/packages/helm/cert-manager/cert-manager
 
 # Configuración global
@@ -6,14 +6,20 @@ global:
   priorityClassName: ""
   rbac:
     create: true
+    aggregateClusterRoles: true
   podSecurityPolicy:
     enabled: false
     useAppArmor: true
+  logLevel: 2
   leaderElection:
-    namespace: "cert-manager"
+    namespace: "kube-system"
+  nodeSelector: {}
+  imagePullSecrets: []
 
-# Instalar CRDs
-installCRDs: true
+# Instalar CRDs (nuevo schema)
+crds:
+  enabled: true
+  keep: true
 
 # Configuración principal del controlador cert-manager
 replicaCount: 1
@@ -25,7 +31,7 @@ strategy:
     maxSurge: 0
     maxUnavailable: 1
 
-# Configuración de la imagen
+# Configuración de la imagen (nuevo formato)
 image:
   registry: quay.io
   repository: jetstack/cert-manager-controller
@@ -48,12 +54,22 @@ resources:
     cpu: 10m
     memory: 32Mi
 
-# Security Context
+# Security Context (nuevo schema)
 securityContext:
   runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
 
 # Configuración de nodos
-nodeSelector: {}
+nodeSelector:
+  kubernetes.io/os: linux
 tolerations: []
 affinity: {}
 
@@ -61,7 +77,7 @@ affinity: {}
 dns01RecursiveNameservers: "8.8.8.8:53,1.1.1.1:53"
 dns01RecursiveNameserversOnly: false
 
-# Configuración de métricas
+# Configuración de métricas (actualizada)
 prometheus:
   enabled: true
   servicemonitor:
@@ -71,10 +87,23 @@ prometheus:
     path: /metrics
     interval: 60s
     scrapeTimeout: 30s
+    labels: {}
+    annotations: {}
+    endpointAdditionalProperties: {}
+  podmonitor:
+    enabled: false
+    prometheusInstance: default
+    path: /metrics
+    interval: 60s
+    scrapeTimeout: 30s
+    labels: {}
+    annotations: {}
+    endpointAdditionalProperties: {}
 
-# Configuración del webhook
+# Configuración del webhook (schema actualizado)
 webhook:
   replicaCount: 1
+  timeoutSeconds: 30
   
   strategy:
     type: RollingUpdate
@@ -97,11 +126,28 @@ webhook:
   
   securityContext:
     runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
   
   hostNetwork: false
   serviceType: ClusterIP
+  securePort: 10250
+  
+  # Configuración de Service Account para webhook
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+    automountServiceAccountToken: true
 
-# Configuración del CA Injector
+# Configuración del CA Injector (schema actualizado)
 cainjector:
   enabled: true
   replicaCount: 1
@@ -127,8 +173,24 @@ cainjector:
   
   securityContext:
     runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  
+  # Configuración de Service Account para cainjector
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+    automountServiceAccountToken: true
 
-# Configuración de startup API check
+# Configuración de startup API check (schema actualizado)
 startupapicheck:
   enabled: true
   
@@ -146,7 +208,7 @@ startupapicheck:
   
   image:
     registry: quay.io
-    repository: jetstack/cert-manager-ctl
+    repository: jetstack/cert-manager-startupapicheck
     pullPolicy: IfNotPresent
   
   resources:
@@ -159,6 +221,25 @@ startupapicheck:
   
   securityContext:
     runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  
+  # Service Account para startupapicheck
+  serviceAccount:
+    create: true
+    name: ""
+    annotations:
+      helm.sh/hook: post-install
+      helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      helm.sh/hook-weight: "-5"
+    automountServiceAccountToken: true
 
 # Configuración adicional para el controlador
 extraArgs: []
@@ -178,3 +259,25 @@ podDisruptionBudget:
 
 # Configuración de feature gates
 featureGates: ""
+
+# Configuración de ACME solver
+acmesolver:
+  image:
+    registry: quay.io
+    repository: jetstack/cert-manager-acmesolver
+    pullPolicy: IfNotPresent
+
+# Auto-approver configuration
+disableAutoApproval: false
+approveSignerNames:
+  - "issuers.cert-manager.io/*"
+  - "clusterissuers.cert-manager.io/*"
+
+# Liveness probe para el controlador
+livenessProbe:
+  enabled: true
+  failureThreshold: 8
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 15
