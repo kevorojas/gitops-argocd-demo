@@ -1,0 +1,235 @@
+# Cert-Manager Helm Chart Values
+# Referencia: https://artifacthub.io/packages/helm/cert-manager/cert-manager
+
+# Configuración global
+global:
+  # Configuración de podSecurityPolicy
+  podSecurityPolicy:
+    enabled: false
+    useAppArmor: true
+  
+  # Configuración de prioridad de pods
+  priorityClassName: ""
+  
+  # Configuración de imagen base
+  imageRegistry: ""
+  
+# Configuración principal del controlador cert-manager
+installCRDs: true
+
+# Configuración de réplicas y alta disponibilidad
+replicaCount: 1
+
+# Estrategia de deployment
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
+# Configuración de la imagen
+image:
+  repository: quay.io/jetstack/cert-manager-controller
+  # tag: Usar la versión que se especifique en el Application
+  pullPolicy: IfNotPresent
+
+# Configuración de ServiceAccount
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: true
+
+# Configuración de recursos
+resources:
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+  requests:
+    memory: "32Mi"
+    cpu: "10m"
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 1000
+
+# Configuración de nodos y tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Configuración de DNS
+dns01RecursiveNameservers: []
+dns01RecursiveNameserversOnly: false
+
+# Configuración de métricas
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false
+    prometheusInstance: default
+    targetPort: 9402
+    path: /metrics
+    interval: 60s
+    scrapeTimeout: 30s
+
+# Configuración del webhook
+webhook:
+  replicaCount: 1
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  
+  image:
+    repository: quay.io/jetstack/cert-manager-webhook
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+    requests:
+      memory: "32Mi"
+      cpu: "10m"
+  
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+  
+  podSecurityContext:
+    fsGroup: 1000
+  
+  # Configuración de métricas para webhook
+  prometheus:
+    enabled: true
+    servicemonitor:
+      enabled: false
+  
+  # Configuración de red para webhook
+  hostNetwork: false
+  serviceType: ClusterIP
+  
+  # Configuración de mutación de pods
+  mutatingAdmissionResource:
+    namespaceSelector:
+      matchExpressions:
+      - key: name
+        operator: NotIn
+        values:
+        - cert-manager
+
+# Configuración del CA Injector
+cainjector:
+  enabled: true
+  replicaCount: 1
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  
+  image:
+    repository: quay.io/jetstack/cert-manager-cainjector
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      memory: "512Mi"
+      cpu: "100m"
+    requests:
+      memory: "32Mi"
+      cpu: "10m"
+  
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+  
+  podSecurityContext:
+    fsGroup: 1000
+  
+  # Configuración de métricas para cainjector
+  prometheus:
+    enabled: true
+    servicemonitor:
+      enabled: false
+
+# Configuración de startup API check
+startupapicheck:
+  enabled: true
+  
+  # Configuración de timeout
+  timeout: 1m
+  
+  # Configuración de backoff
+  backoffLimit: 4
+  
+  # Configuración de Job
+  jobAnnotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-weight: "1"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  
+  image:
+    repository: quay.io/jetstack/cert-manager-ctl
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      memory: "32Mi"
+      cpu: "100m"
+    requests:
+      memory: "16Mi"
+      cpu: "10m"
+  
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+  
+  podSecurityContext:
+    fsGroup: 1000
+
+# Configuración adicional para el controlador
+extraArgs: []
+extraEnv: []
+
+# Configuración de volumes adicionales
+volumes: []
+volumeMounts: []
+
+# Configuración de anotaciones para pods
+podAnnotations: {}
+
+# Configuración de etiquetas para pods
+podLabels: {}
+
+# Configuración de disruption budget
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  # maxUnavailable: 1
+
+# Configuración de feature gates
+featureGates: ""
+
+# Configuración de log level
+logLevel: 2
+
+# Configuración de leader election
+leaderElection:
+  namespace: "cert-manager"
+
+# Configuración del namespace de instalación
+installNamespace: false
