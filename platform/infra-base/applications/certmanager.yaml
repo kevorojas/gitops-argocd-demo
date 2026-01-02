@@ -1,41 +1,41 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: certmanager
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec: 
-  project: default
-  sources:
-    - chart: cert-manager
-      repoURL: https://charts.jetstack.io
-      targetRevision: v1.19.2
-      helm:
-        releaseName: cert-manager
-        valueFiles:
-          - $values/platform/infra-components/certmanager/values.yaml
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: certmanager
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec: 
+#   project: default
+#   sources:
+#     - chart: cert-manager
+#       repoURL: https://charts.jetstack.io
+#       targetRevision: v1.19.2
+#       helm:
+#         releaseName: cert-manager
+#         valueFiles:
+#           - $values/platform/infra-components/certmanager/values.yaml
     
-    - repoURL: https://github.com/kevorojas/gitops-argocd-demo.git
-      targetRevision: main
-      ref: values
+#     - repoURL: https://github.com/kevorojas/gitops-argocd-demo.git
+#       targetRevision: main
+#       ref: values
   
-  destination: 
-    server: https://kubernetes.default.svc
-    namespace: cert-manager
+#   destination: 
+#     server: https://kubernetes.default.svc
+#     namespace: cert-manager
   
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
-    syncOptions:
-      - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#       allowEmpty: false
+#     syncOptions:
+#       - CreateNamespace=true
+#       - PrunePropagationPolicy=foreground
+#       - PruneLast=true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 5s
+#         factor: 2
+#         maxDuration: 3m
